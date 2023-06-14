@@ -23,46 +23,16 @@ export async function checkNumberStatus(id, conn = false) {
         throw err;
       }
     }
-    const lid = await WAPI.getChat(id);
-    if (lid) {
-      if (id.endsWith('@g.us')) {
-        return await WPP.group
-          .ensureGroup(lid.id)
-          .then((result) => {
-            if (!!result && typeof result === 'object') {
-              const data = {
-                status: 200,
-                numberExists: true,
-                id: result.id,
-              };
-              return data;
-            }
-            throw Object.assign(err, {
-              connection: connection,
-              numberExists: false,
-              text: `The number does not exist`
-            });
-          })
-          .catch((err) => {
-            if (err.text) {
-              throw err;
-            }
-            throw Object.assign(err, {
-              connection: connection,
-              numberExists: false,
-              text: err
-            });
-          });;
-      }
 
-      return await WPP.contact
-        .queryExists(lid.id)
+    if (id.endsWith('@g.us')) {
+      return await WPP.group
+        .ensureGroup(id)
         .then((result) => {
-          if (typeof result === 'object') {
+          if (!!result && typeof result === 'object') {
             const data = {
               status: 200,
               numberExists: true,
-              id: result.wid
+              id: result.id
             };
             return data;
           }
@@ -82,15 +52,38 @@ export async function checkNumberStatus(id, conn = false) {
             text: err
           });
         });
-    } else {
-      throw Object.assign(err, {
-        connection: connection,
-        numberExists: false
-      });
     }
+
+    return await WPP.contact
+      .queryExists(id)
+      .then((result) => {
+        if (!!result && typeof result === 'object') {
+          const data = {
+            status: 200,
+            numberExists: true,
+            id: result.wid
+          };
+          return data;
+        }
+        throw Object.assign(err, {
+          connection: connection,
+          numberExists: false,
+          text: `The number does not exist`
+        });
+      })
+      .catch((err) => {
+        if (err.text) {
+          throw err;
+        }
+        throw Object.assign(err, {
+          connection: connection,
+          numberExists: false,
+          text: err
+        });
+      });
   } catch (e) {
     return {
-      status: e.error,
+      status: e.error === undefined ? 500 : e.error,
       text: e.text,
       numberExists: e.numberExists,
       connection: e.connection

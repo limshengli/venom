@@ -17,5 +17,5 @@ export function sendImage(
   status = false,
   passId
 ) {
-  return sendFile(imgBase64, chatid, filename, caption, type, status, passId);
+  return WPP.chat.sendFileMessage(chatid, imgBase64, {createChat: true, mimetype: type, caption: caption, filename: filename});
 }
